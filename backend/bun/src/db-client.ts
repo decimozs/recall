@@ -12,7 +12,7 @@ export class DatabaseBridge {
   private readerTask: Promise<void> | null = null;
 
   constructor(options: { bridgePath?: string; dbPath?: string } = {}) {
-    this.bridgePath = options.bridgePath || process.env.RECALL_DB_BRIDGE || '../backend-native/target/debug/recall-native-db';
+    this.bridgePath = options.bridgePath || process.env.RECALL_DB_BRIDGE || '../native/target/debug/recall-native-db';
     this.dbPath = options.dbPath || process.env.RECALL_DB_PATH || './.data/recall.sqlite3';
   }
 

@@ -31,7 +31,7 @@ From the project folder:
 ```bash
 bun install --cwd desktop/ui
 bun install --cwd desktop
-bun install --cwd backend-migrate
+bun install --cwd backend/migrate
 bun run --cwd desktop build:sidecars
 bun run --cwd desktop build
 ```
@@ -63,20 +63,20 @@ Skills never edit the SQLite file directly. If the app or Notion is offline, sav
 
 ## Preserving existing PostgreSQL data
 
-`backend-migrate` is retained only as a one-time offline import utility. It copies workspaces, sources, quizzes, questions, attempts, answers, flashcards, review history, task results, sync requests, and queued generation requests into the local SQLite database while preserving IDs and timestamps.
+`backend/migrate` is retained only as a one-time offline import utility. It copies workspaces, sources, quizzes, questions, attempts, answers, flashcards, review history, task results, sync requests, and queued generation requests into the local SQLite database while preserving IDs and timestamps.
 
 Run a non-mutating check first:
 
 ```bash
 DATABASE_URL=postgres://... \
-bun run --cwd backend-migrate migrate --dry-run
+bun run --cwd backend/migrate migrate --dry-run
 ```
 
 Then import into the local SQLite database:
 
 ```bash
 DATABASE_URL=postgres://... \
-bun run --cwd backend-migrate migrate
+bun run --cwd backend/migrate migrate
 ```
 
 The importer is upsert-based and does not delete local data by default. `--replace` requires the additional explicit environment variable `RECALL_ALLOW_REPLACE=1`.
@@ -99,9 +99,9 @@ Generation and Notion synchronization require an online Codex/Notion connection.
 
 - `desktop/` — Tauri macOS shell, packaging, development scripts, and desktop UI.
 - `desktop/ui/` — Svelte UI bundled inside the desktop app.
-- `backend-bun/` — local API sidecar used only by the desktop app.
-- `backend-native/` — local SQLite adapter sidecar.
-- `backend-migrate/` — optional one-time PostgreSQL-to-SQLite importer.
+- `backend/bun/` — local API sidecar used only by the desktop app.
+- `backend/native/` — local SQLite adapter sidecar.
+- `backend/migrate/` — optional one-time PostgreSQL-to-SQLite importer.
 - `.agents/skills/` — project-local skill references.
 - `/Users/decimozs/.agents/skills/` — globally installed Recall skills.
 

@@ -8,11 +8,12 @@ npm-debug.log*
 /docs/
 /desktop/src-tauri/binaries/
 desktop/.*
+/CONTEXT.md
 **/.data/
-backend-bun/dist/
-backend-migrate/dist/
+backend/bun/dist/
+backend/migrate/dist/
 desktop/ui/dist/
-backend-native/target/
+backend/native/target/
 desktop/src-tauri/target/
 desktop/src-tauri/gen/
 desktop/src-tauri/icons/android/
@@ -22,4 +23,4 @@ desktop/src-tauri/icons/icon.ico
 desktop/src-tauri/icons/*x*.png
 desktop/src-tauri/icons/Square*.png
 desktop/src-tauri/icons/StoreLogo.png
-backend-native/*.sqlite3*
+backend/native/*.sqlite3*

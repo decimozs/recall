@@ -1,5 +1,5 @@
 import postgres from 'postgres';
-import { DatabaseBridge } from '../../backend-bun/src/db-client.js';
+import { DatabaseBridge } from '../../bun/src/db-client.js';
 
 const dryRun = process.argv.includes('--dry-run');
 const replace = process.argv.includes('--replace');

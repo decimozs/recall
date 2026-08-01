@@ -11,6 +11,6 @@ cleanup() {
 }
 trap cleanup EXIT INT TERM
 
-bun run --cwd "$repo_dir/backend-bun" start &
+bun run --cwd "$repo_dir/backend/bun" start &
 backend_pid=$!
 bun run --cwd "$desktop_dir/ui" dev --host 127.0.0.1
