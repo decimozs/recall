@@ -1,0 +1,4 @@
+interface:
+  display_name: "Recall Roadmap"
+  short_description: "Create trackable learning roadmaps from sources"
+  default_prompt: "Use $recall-roadmap to turn this source into a structured learning roadmap with concept notes, tasks, and progress views."
