@@ -4,6 +4,8 @@ Recall is a self-contained macOS learning desktop app for turning selected Notio
 
 Recall is desktop-only for now. There is no browser runtime, Docker runtime, or PostgreSQL runtime in this project.
 
+> **Platform warning:** Recall currently supports macOS only. Linux and Windows support are planned for a future update and are not available yet.
+
 ## Features
 
 - Source-grounded quizzes with single-answer multiple choice and true/false questions.
