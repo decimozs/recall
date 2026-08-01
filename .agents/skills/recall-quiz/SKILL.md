@@ -1,6 +1,6 @@
 ---
 name: recall-quiz
-description: Generate, validate, and publish Recall quizzes from Notion roadmaps, concept pages, task databases, or source notes. Use when the user wants randomized single-answer multiple-choice or true/false questions, balanced answer positions, explanations, broad concept coverage, and Recall app quiz records.
+description: Generate, validate, and publish quizzes to the self-contained Recall macOS app from Notion roadmaps, concept pages, task databases, or source notes. Use when the user wants randomized single-answer multiple-choice or true/false questions, balanced answer positions, explanations, broad concept coverage, and Recall app quiz records.
 ---
 
 # Recall Quiz
@@ -74,6 +74,15 @@ Randomness must be validated. If a quiz has enough multiple-choice questions, no
 
 ### 5. Publish to Recall
 
+Before publishing or verifying a quiz, use the desktop runtime preflight:
+
+- Treat the installed Recall macOS app as the only Recall runtime. Do not use Docker, `localhost:8080`, the deleted browser frontend, or a PostgreSQL service.
+- Prefer configured Notion MCP tools for source reads. If a Notion tool is not visible, search the available tools for page/database search and fetch operations before inventing a call.
+- Ensure `/Applications/Recall.app` is running and probe `GET http://127.0.0.1:3000/api/health`. If it is not running, launch the app and retry; do not start a second API on the same port.
+- Read `~/Library/Application Support/com.decimozs.recall/connection.json` for `api_url` and `agent_key`. Use its `X-Agent-Key` value; never hardcode a production key or guess a database path.
+- Send publish requests to the local API from the desktop manifest. Use the API for reads and writes; never edit `recall.sqlite3` directly.
+- If the app or Notion is offline, keep the source-grounded quiz ready but do not publish a partial quiz or claim Notion synchronization. Generation and sync resume when connectivity returns.
+
 Post the normalized quiz through Recall's protected internal endpoint:
 
 ```text
@@ -88,7 +97,7 @@ Payload requirements:
 - Quiz title, usually `[Source or concept]` without temporary suffixes.
 - All generated questions, including `task_key`.
 
-The browser must not call Notion directly. Codex is the orchestration boundary between Notion MCP and Recall.
+Codex is the orchestration boundary between Notion MCP and the local Recall desktop API. The desktop UI never calls Notion directly.
 
 ### 6. Record quiz activity in Notion
 

@@ -2,12 +2,14 @@
 
 Use the live API response and fetched Notion schemas as authoritative. These defaults describe the current Recall project.
 
-## Recall endpoint
+## Desktop Recall endpoint
 
 ```text
-GET http://localhost:3000/api/internal/attempts/:id/notion-sync
-X-Agent-Key: <AGENT_API_KEY>
+GET http://127.0.0.1:3000/api/internal/attempts/:id/notion-sync
+X-Agent-Key: <agent_key from connection.json>
 ```
+
+Before using the endpoint, ensure `/Applications/Recall.app` is running and read `~/Library/Application Support/com.decimozs.recall/connection.json` for the API URL and agent key. The desktop app's local SQLite database is the source of truth; use this API rather than opening or modifying `recall.sqlite3` directly. Do not substitute Docker, `localhost:8080`, or a PostgreSQL runtime.
 
 The response contains:
 

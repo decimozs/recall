@@ -1,6 +1,6 @@
 ---
 name: recall-flashcards
-description: Generate, validate, publish, and track source-grounded Recall flashcards from selected Notion notes, concepts, roadmaps, or task modules. Use when the user wants flashcards, card review, flip-card study, known/needs-review tracking, or Flashcards-mode attempt rows in the Recall attempts table.
+description: Generate, validate, publish, and track source-grounded flashcards in the self-contained Recall macOS app from selected Notion notes, concepts, roadmaps, or task modules. Use when the user wants flashcards, card review, flip-card study, known/needs-review tracking, or Flashcards-mode attempt rows in the Recall attempts table.
 ---
 
 # Recall Flashcards
@@ -28,6 +28,15 @@ Prefer one idea per card. Avoid duplicate prompts, unsupported facts, vague answ
 
 ## Publish to Recall
 
+Before publishing or verifying a flashcard set, use the desktop runtime preflight:
+
+- Treat the installed Recall macOS app as the only Recall runtime. Do not use Docker, `localhost:8080`, the deleted browser frontend, or a PostgreSQL service.
+- Prefer configured Notion MCP tools for source reads. If a Notion tool is not visible, search the available tools for page/database search and fetch operations before inventing a call.
+- Ensure `/Applications/Recall.app` is running and probe `GET http://127.0.0.1:3000/api/health`. If it is not running, launch the app and retry; do not start a second API on the same port.
+- Read `~/Library/Application Support/com.decimozs.recall/connection.json` for `api_url` and `agent_key`. Use its `X-Agent-Key` value; never hardcode a production key or guess a database path.
+- Send publish requests to the local API from the desktop manifest. Use the API for reads and writes; never edit `recall.sqlite3` directly.
+- If the app or Notion is offline, keep the validated set ready but do not publish partial data or claim synchronization. Existing locally stored sets remain studyable offline.
+
 Use the protected internal endpoint:
 
 ```text
@@ -48,7 +57,7 @@ Payload shape:
 }
 ```
 
-The browser must never call Notion directly. Codex reads Notion, validates the cards, and publishes them to Recall.
+The desktop UI must never call Notion directly. Codex reads Notion, validates the cards, and publishes them to the local Recall API.
 
 ## Review experience
 

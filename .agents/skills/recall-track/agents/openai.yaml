@@ -1,4 +1,4 @@
 interface:
   display_name: "Recall Track"
-  short_description: "Sync Recall progress and quiz activity"
-  default_prompt: "Use $recall-track to synchronize Recall progress and quiz activity with Notion."
+  short_description: "Sync desktop Recall progress and quiz activity"
+  default_prompt: "Use $recall-track to synchronize the local Recall desktop app's progress and quiz activity with Notion."

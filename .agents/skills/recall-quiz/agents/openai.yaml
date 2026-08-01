@@ -1,4 +1,4 @@
 interface:
   display_name: "Recall Quiz"
-  short_description: "Generate balanced, concept-rich Recall quizzes"
-  default_prompt: "Use $recall-quiz to generate a balanced Recall quiz from this roadmap or source."
+  short_description: "Generate balanced desktop Recall quizzes"
+  default_prompt: "Use $recall-quiz to generate and publish a balanced quiz to the local Recall desktop app from this roadmap or source."

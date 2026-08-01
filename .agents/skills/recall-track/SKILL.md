@@ -1,11 +1,11 @@
 ---
 name: recall-track
-description: Synchronize Recall quiz and flashcard activity and roadmap progress with Notion. Use when processing queued Recall sync requests, updating task and concept status, creating quiz-attempt records, repairing failed syncs, or verifying that Notion tables and Kanban views reflect Recall changes.
+description: Synchronize the self-contained Recall macOS app's quiz, flashcard, and roadmap activity with Notion. Use when processing queued Recall sync requests, updating task and concept status, creating quiz-attempt records, repairing failed syncs, or verifying that Notion tables and Kanban views reflect Recall changes.
 ---
 
 # Recall Track
 
-Synchronize Recall's PostgreSQL state with the user's Notion learning system without duplicating records or overwriting authored notes.
+Synchronize the Recall desktop app's local attempt state with the user's Notion learning system without duplicating records or overwriting authored notes.
 
 ## Responsibilities
 
@@ -18,15 +18,25 @@ Synchronize Recall's PostgreSQL state with the user's Notion learning system wit
 
 ## Source of truth
 
-- Recall PostgreSQL is authoritative for quiz attempts, answer correctness, scores, retry counts, durations, and sync queue state.
+- Recall's local SQLite database, accessed through the desktop app's local API, is authoritative for quiz attempts, answer correctness, scores, retry counts, durations, and sync queue state.
 - Notion is authoritative for roadmap structure, concept notes, task content, and manually authored learning material.
 - This skill is the synchronization layer; it must not invent or rewrite either system's primary content.
+
+## Desktop runtime and tool preflight
+
+- Treat `/Applications/Recall.app` and its local sidecars as the only Recall runtime. Do not use Docker, `localhost:8080`, the removed browser implementation, a PostgreSQL runtime, or a second development API.
+- Prefer configured Notion MCP tools. If a needed Notion operation is not visible, search available tools for page/database/data-source search and fetch operations before inventing a call.
+- Ensure the app is running and probe `GET http://127.0.0.1:3000/api/health`. If it is stopped, launch the installed app and retry.
+- Read `~/Library/Application Support/com.decimozs.recall/connection.json` for `api_url` and `agent_key`; use that API URL and `X-Agent-Key` for protected requests. Never hardcode the key or guess which SQLite file to open.
+- Use the local API for all Recall reads and writes. Never mutate `recall.sqlite3` directly; this prevents broken IDs, missing queue rows, and lost timestamps.
+- If the app or Notion is offline, leave completed local sync requests queued and report the pending state. Do not create partial Notion rows or mark a sync complete without verification.
 
 ## Standard workflow
 
 ### 1. Read the sync request
 
-- Poll the protected Recall endpoint `GET /api/internal/attempts/:id/notion-sync` with `X-Agent-Key`.
+- Poll the protected local Recall endpoint `GET /api/internal/attempts/:id/notion-sync` with the key from the desktop connection manifest.
+- If the desktop app is offline, do not attempt Recall generation or Notion writes. Leave completed local sync requests queued and process them after connectivity returns.
 - Process only completed attempts with a valid task result set.
 - Read the returned `notion_target` values and fetched Notion schemas before mutation. Never hardcode a property name when the live schema differs.
 - If the request is already completed, do not create another attempt row.

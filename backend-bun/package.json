@@ -1,0 +1,10 @@
+{
+  "name": "recall-backend-bun",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "bun --watch src/server.ts",
+    "start": "bun src/server.ts"
+  },
+  "type": "module"
+}

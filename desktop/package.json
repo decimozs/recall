@@ -1,0 +1,15 @@
+{
+  "name": "recall-desktop",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "build:sidecars": "sh scripts/build-sidecars.sh",
+    "build": "tauri build",
+    "icon": "tauri icon"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "latest"
+  }
+}

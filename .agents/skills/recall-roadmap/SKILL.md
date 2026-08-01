@@ -1,6 +1,6 @@
 ---
 name: recall-roadmap
-description: Create and maintain structured learning roadmaps in Notion from source pages, databases, modules, or user-provided topics. Use when the user wants a study plan with automatically grouped concepts, task tracking, concept notes, table/Kanban views, icons, and Recall quiz coverage.
+description: Create and maintain structured learning roadmaps in Notion for the self-contained Recall macOS app from source pages, databases, modules, or user-provided topics. Use when the user wants a study plan with automatically grouped concepts, task tracking, concept notes, table/Kanban views, icons, and Recall quiz coverage.
 ---
 
 # Recall Roadmap
@@ -28,6 +28,7 @@ Turn learning material into a navigable, trackable Notion system that Recall can
 ### 2. Read and analyze the source
 
 - Use the Notion MCP fetch/search tools to read the source and its relevant child content.
+- Prefer configured Notion MCP tools. If a required Notion operation is not visible, search available tools for page/database search, fetch, block, and data-source operations before inventing a call.
 - Extract concepts, prerequisites, practical outcomes, and concrete review items. Do not skip secondary concepts merely because a popular main topic exists.
 - Group related material into a small, meaningful concept set. Prefer concepts such as Fundamentals, CRUD, Queries, Indexing, Data Modeling, Transactions, Scaling, and Security only when supported by the source.
 - For every task, retain a short source reference or excerpt so the task remains explainable.
@@ -104,10 +105,13 @@ Every Notion artifact created by this skill must receive an emoji or icon whenev
 
 When the roadmap is used by Recall:
 
-- Generate quizzes from concept pages or the selected source through the protected Recall internal quiz endpoint.
+- Use the self-contained macOS desktop runtime only. Ensure `/Applications/Recall.app` is running and probe `GET http://127.0.0.1:3000/api/health` before publishing or verifying Recall content.
+- Read `~/Library/Application Support/com.decimozs.recall/connection.json` for `api_url` and `agent_key`; send protected requests with its `X-Agent-Key` value. Do not use Docker, `localhost:8080`, the deleted browser runtime, or PostgreSQL for Recall operations.
+- Generate quizzes and flashcards from concept pages or the selected source through the protected local Recall API. Use the API for database reads and writes; never edit the desktop `recall.sqlite3` file directly.
 - Include a stable `task_key` on every generated question so scores can be aggregated by learning task/concept.
 - On quiz or flashcard completion, write one row to the separate `Recall` database and update only general task progress fields such as Status and Done.
 - Never write quiz scores, retries, or duration into the learning-task rows.
+- If the desktop app or Notion is offline, do not publish partial study material or claim synchronization. Preserve the prepared roadmap and retry the local publish/sync workflow when connectivity returns.
 
 ## Safety boundaries
 
