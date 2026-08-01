@@ -71,6 +71,10 @@ Use meaningful, restrained icons. Choose deterministically from the concept's me
 
 Use a different icon only when the selected icon is already used nearby or the user requests randomization. Do not use decorative icons that obscure navigation.
 
+#### Icon requirement
+
+Every Notion artifact created by this skill must receive an emoji or icon whenever the Notion operation supports it: roadmap pages, concept notes, task databases, task rows, table views, Kanban boards, and related pages. Use a deterministic semantic icon for repeatable runs, preserve existing user-selected icons, and never create an unlabelled artifact when an icon-capable field is available. If a specific view type does not support an icon, keep its parent page or database icon and record that limitation rather than changing the view structure.
+
 ### 6. Verify and report
 
 - Fetch the updated databases/pages after mutations.

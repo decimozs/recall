@@ -62,6 +62,10 @@ Use the existing `Recall Quiz Attempts` data source when present. A completed ro
 
 Do not add Mode or Recall Attempt ID unless the user explicitly requests them. Keep the attempt ID in the sync process as an internal deduplication key.
 
+#### One row and one icon per attempt
+
+Create exactly one Notion page row for each completed Recall attempt, including every retry. Never replace or aggregate a quiz's retry history into a single overall row. Set an emoji/page icon when creating the row (use the existing quiz-attempt icon policy, such as 🧠), while keeping the internal Recall attempt ID only in the deduplication workflow. Verify that each retry has its own date, score, correct count, duration, retry number, status, and icon.
+
 ### 5. Verify the changes
 
 - Fetch or query the updated task rows and attempt row.

@@ -22,6 +22,7 @@ The browser only communicates with Recall. It never connects to Notion directly.
 - Track attempts, scores, retries, duration, and learning progress.
 - Sync roadmap task status and quiz attempts back to Notion.
 - Keep quiz-attempt data separate from learning-task data.
+- Give created Notion pages, databases, rows, and other icon-capable artifacts a meaningful emoji/icon.
 
 ## Codex workflow
 
@@ -96,6 +97,8 @@ Recall keeps the learning system separated into two layers:
 - A quiz-attempt database for scores, retries, readable duration, correct answers, and completion history.
 
 This allows the same Notion task database to power table and Kanban views without mixing quiz metrics into the learning roadmap.
+
+Every completed quiz attempt is stored as its own row in `Recall Quiz Attempts`, including retries. Each row keeps its own score, date, duration, correct-answer count, retry number, status, and emoji/page icon, so the complete attempt history remains visible in Notion.
 
 ## Project locations
 

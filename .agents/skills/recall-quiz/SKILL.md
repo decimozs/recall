@@ -96,6 +96,10 @@ Use the existing `Recall Quiz Attempts` database when available. If it does not 
 
 The attempt record is created after submission, not when the quiz is generated. Generation metadata may be recorded separately only if the user requests a quiz catalog.
 
+#### Notion artifact icons
+
+When this skill creates a Notion page, quiz catalog, database, table, or other icon-capable artifact, assign a meaningful emoji/icon. Use a consistent quiz icon for quiz-attempt rows (for example, 🧠), preserve existing icons when updating rows, and do not add emoji characters into authored titles unless requested. Every completed attempt remains its own row and its own icon-bearing page; never collapse retries into one aggregate row.
+
 ### 7. Verify quality
 
 Before reporting success, check:
