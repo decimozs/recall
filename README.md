@@ -11,6 +11,7 @@ The browser only communicates with Recall. It never connects to Notion directly.
 - Generate quizzes from selected Notion pages, databases, concepts, or modules.
 - Create questions across all relevant concepts instead of covering only headline topics.
 - Support single-answer multiple choice and true/false questions.
+- Support source-grounded flashcard sets with flip-card review, Known, and Review again actions.
 - Randomize question and answer order.
 - Balance correct-answer positions to avoid answer-position bias.
 - Include explanations and source context for each question.
@@ -20,6 +21,7 @@ The browser only communicates with Recall. It never connects to Notion directly.
 - Show a submission summary with score, duration, correct answers, and concept breakdown.
 - Persist answers locally while a quiz is in progress.
 - Track attempts, scores, retries, duration, and learning progress.
+- Track quiz and flashcard attempts in one Notion table with a `Mode` property.
 - Sync roadmap task status and quiz attempts back to Notion.
 - Keep quiz-attempt data separate from learning-task data.
 - Give created Notion pages, databases, rows, and other icon-capable artifacts a meaningful emoji/icon.
@@ -62,7 +64,11 @@ When a specific concept is selected, it acts as a strict source boundary. A Fund
 
 ### `$recall-track`
 
-Synchronizes Recall activity with Notion. It updates roadmap task progress, creates one row per completed quiz attempt, prevents duplicate records, verifies table/Kanban changes, and repairs failed or queued syncs safely.
+Synchronizes Recall activity with Notion. It updates roadmap task progress, creates one row per completed quiz or flashcard attempt, writes `Mode = Quiz` or `Mode = Flashcards`, prevents duplicate records, verifies table/Kanban changes, and repairs failed or queued syncs safely.
+
+### `$recall-flashcards`
+
+Generates source-grounded front/back flashcards from selected Notion notes or learning modules, publishes them to Recall through the protected internal API, and tracks each completed review as a separate Flashcards-mode attempt.
 
 ## Simple setup
 
@@ -98,7 +104,7 @@ Recall keeps the learning system separated into two layers:
 
 This allows the same Notion task database to power table and Kanban views without mixing quiz metrics into the learning roadmap.
 
-Every completed quiz attempt is stored as its own row in `Recall Quiz Attempts`, including retries. Each row keeps its own score, date, duration, correct-answer count, retry number, status, and emoji/page icon, so the complete attempt history remains visible in Notion.
+Every completed quiz or flashcard attempt is stored as its own row in `Recall Quiz Attempts`, including retries. Each row keeps its own mode, score, date, duration, correct-answer count, retry number, status, and emoji/page icon, so the complete attempt history remains visible in Notion.
 
 ## Project locations
 

@@ -1,6 +1,6 @@
 ---
 name: recall-track
-description: Synchronize Recall quiz activity and roadmap progress with Notion. Use when processing queued Recall sync requests, updating task and concept status, creating quiz-attempt records, repairing failed syncs, or verifying that Notion tables and Kanban views reflect Recall changes.
+description: Synchronize Recall quiz and flashcard activity and roadmap progress with Notion. Use when processing queued Recall sync requests, updating task and concept status, creating quiz-attempt records, repairing failed syncs, or verifying that Notion tables and Kanban views reflect Recall changes.
 ---
 
 # Recall Track
@@ -11,6 +11,7 @@ Synchronize Recall's PostgreSQL state with the user's Notion learning system wit
 
 - Update roadmap task progress from completed Recall quiz results.
 - Create one Notion row per completed quiz attempt.
+- Create one Notion row per completed flashcard review.
 - Keep quiz scores, retries, duration, and attempt status in the separate quiz-attempt database.
 - Verify that shared Notion data sources drive their table, board, and other views correctly.
 - Process manual repair requests and report failures clearly.
@@ -35,7 +36,17 @@ Synchronize Recall's PostgreSQL state with the user's Notion learning system wit
 - Treat the Recall attempt ID as the idempotency key, even if it is not displayed as a Notion property.
 - Search the quiz-attempt data source for an existing row matching the quiz, attempt timestamp, score, and other returned metadata.
 - If an existing matching row is found, update it rather than creating a duplicate.
+- For a manual or unspecified sync request, enumerate every completed attempt for the selected quiz/source, oldest first. Do not interpret “sync” as “sync only the newest attempt” unless the user explicitly says “latest”.
+- Preserve retry history: each completed attempt ID must produce its own Notion row. If earlier retries are missing, backfill those rows before reporting the sync complete; never replace them with the newest retry or an aggregate score.
+- When Notion does not store the Recall attempt ID, use the exact deduplication tuple of quiz, source, completed timestamp, score, total questions, and retry number. Query existing rows before creating missing retries.
 - If queue-state mutation endpoints are available, mark the request `processing` before Notion writes, then `completed` only after verification. On failure, mark it `failed` with a useful error message or leave it retryable according to the queue contract.
+
+### Flashcard review lifecycle
+
+- Treat `content_mode = flashcards` and `Mode = Flashcards` as the flashcard path; do not route these attempts through quiz-only review endpoints.
+- Sync only completed reviews. Starting a review creates a local attempt, while `POST /api/flashcard-reviews/:id/complete` calculates the score and queues Notion synchronization.
+- Read `GET /api/internal/attempts/:id/notion-sync` with `X-Agent-Key` after completion. Use `duration_display`, known-card count, total cards, and retry number from that response.
+- Preserve every completed review retry as its own Notion row. A review that was canceled or remains incomplete must not create a completed attempt row.
 
 ### 3. Update roadmap tasks
 
@@ -59,8 +70,9 @@ Use the existing `Recall Quiz Attempts` data source when present. A completed ro
 - Correct Answers
 - Total Questions
 - Duration as a readable string such as `45s`, `6m 11s`, or `1h 4m 3s`
+- Mode = `Quiz` or `Flashcards`, matching the completed Recall content mode
 
-Do not add Mode or Recall Attempt ID unless the user explicitly requests them. Keep the attempt ID in the sync process as an internal deduplication key.
+Keep Recall Attempt ID internal as the idempotency key; do not add it as a Notion property. The shared table's Mode property is required so quiz attempts and flashcard reviews can be filtered into separate views.
 
 #### One row and one icon per attempt
 
@@ -80,6 +92,7 @@ Support requests such as:
 
 - “Sync the latest Recall attempt.”
 - “Sync all queued Recall attempts.”
+- “Sync Recall activity for [quiz/source].” — enumerate and reconcile all completed attempts, including retries.
 - “Repair failed Recall syncs.”
 - “Show me what Recall and Notion disagree on.”
 

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Recall Flashcards"
+  short_description: "Generate source-grounded flashcards and track review progress"
+  default_prompt: "Use $recall-flashcards to generate flashcards from the selected Notion source and sync review attempts to Recall."
