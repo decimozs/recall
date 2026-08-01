@@ -1,6 +1,6 @@
 # Recall
 
-Recall is a self-contained macOS learning desktop app for turning selected Notion notes into quizzes and flashcards, studying them offline, and tracking progress over time. Codex reads the selected Notion sources through the Notion MCP server, publishes study material to the local Recall app, and synchronizes completed attempts and roadmap progress back to Notion.
+Recall is a self-contained macOS learning desktop app with an agent-skill workflow for turning selected Notion notes into quizzes and flashcards, studying them offline, and tracking progress over time. An agent harness such as Claude Code, Codex, OpenCode, or another compatible runner reads selected Notion sources through Notion MCP, publishes study material to the local Recall app, and synchronizes completed attempts and roadmap progress back to Notion.
 
 Recall is desktop-only for now. There is no browser runtime, Docker runtime, or PostgreSQL runtime in this project.
 
@@ -14,15 +14,28 @@ Recall is desktop-only for now. There is no browser runtime, Docker runtime, or 
 - Zen mode for quizzes and flashcards with progress navigation, warning dialogs, submit confirmation, and summaries.
 - Per-attempt score, answers, retries, duration, and recent activity tracking.
 - Offline study for quizzes and flashcards already stored locally.
-- Online Codex and Notion MCP generation and synchronization when connectivity is available.
+- Online agent-harness and Notion MCP generation and synchronization when connectivity is available.
 - Local SQLite storage in the macOS application data directory.
 
-## Codex skills
+## Agent skills
 
-- `$recall-roadmap` creates structured learning areas, concept notes, learning tasks, views, and icons from a source.
-- `$recall-quiz` generates validated quizzes with strict source boundaries, concept coverage, explanations, and randomized choices.
-- `$recall-flashcards` generates and publishes source-grounded flashcard sets and tracks reviews.
-- `$recall-track` synchronizes Recall attempts, task progress, and queued repairs with Notion.
+- `recall-roadmap` creates structured learning areas, concept notes, learning tasks, views, and icons from a source.
+- `recall-quiz` generates validated quizzes with strict source boundaries, concept coverage, explanations, and randomized choices.
+- `recall-flashcards` generates and publishes source-grounded flashcard sets and tracks reviews.
+- `recall-track` synchronizes Recall attempts, task progress, and queued repairs with Notion.
+
+## Agent-harness compatibility
+
+The Recall skills are designed to be shared across agent harnesses. Each skill is defined by a `SKILL.md` file under `.agents/skills/`, so a harness can discover, copy, or link these skills according to its own global-skill convention.
+
+The workflow is compatible with Claude Code, Codex, OpenCode, and other harnesses that can:
+
+- Read Markdown-based agent skills.
+- Access the Notion MCP server for source retrieval and synchronization.
+- Send authenticated HTTP requests to the local Recall API.
+- Keep secrets in the harness environment rather than in the repository.
+
+The optional `agents/openai.yaml` files provide metadata for OpenAI-compatible tooling; other harnesses can use the `SKILL.md` instructions without them. Recall does not require a specific agent vendor, and the desktop app does not run an agent by itself.
 
 ## macOS setup
 
@@ -50,7 +63,7 @@ For local development:
 bun run --cwd desktop dev
 ```
 
-The packaged app starts its local API and SQLite adapter automatically. It stores the database and a protected `connection.json` manifest in the macOS application data directory. Codex uses that manifest for authenticated publish and synchronization calls.
+The packaged app starts its local API and SQLite adapter automatically. It stores the database and a protected `connection.json` manifest in the macOS application data directory. The configured agent harness uses that manifest for authenticated publish and synchronization calls.
 
 ### Agent runtime
 
@@ -91,20 +104,18 @@ flowchart LR
   Desktop --> UI[Desktop UI]
   Desktop --> API[Local Bun API sidecar]
   API --> SQLite[Local SQLite database]
-  Codex[Codex harness] -->|Notion MCP| Notion[Notion workspace]
-  Codex -->|publish and sync| API
+  Agent[Agent harness] -->|Notion MCP| Notion[Notion workspace]
+  Agent -->|publish and sync| API
 ```
 
-Generation and Notion synchronization require an online Codex/Notion connection. Offline mode is intentionally read-only for generation: users can study saved quizzes and flashcards and retain local progress until connectivity returns.
+Generation and Notion synchronization require an online agent-harness and Notion MCP connection. Offline mode is intentionally read-only for generation: users can study saved quizzes and flashcards and retain local progress until connectivity returns.
 
-## Project structure
+## Contributing
 
-- `desktop/` — Tauri macOS shell, packaging, development scripts, and desktop UI.
-- `desktop/ui/` — Svelte UI bundled inside the desktop app.
-- `backend/bun/` — local API sidecar used only by the desktop app.
-- `backend/native/` — local SQLite adapter sidecar.
-- `backend/migrate/` — optional one-time PostgreSQL-to-SQLite importer.
-- `.agents/skills/` — project-local skill references.
-- `/Users/decimozs/.agents/skills/` — globally installed Recall skills.
+See [CONTRIBUTIONS.md](CONTRIBUTIONS.md) for development checks, agent-skill changes, and repository safety guidelines.
+
+## License
+
+Recall is available under the [MIT License](LICENSE).
 
 `/docs/` is intentionally ignored and is not part of the repository. Do not commit `.env`, credentials, database files, build artifacts, or sidecar binaries.
