@@ -2,6 +2,15 @@
 
 Use the actual fetched Notion schema as authoritative. These are defaults for new structures, not permission to overwrite an existing database.
 
+## Standard artifact names
+
+- Shared quiz and flashcard attempts database: `Recall`
+- Roadmap parent page: `{scope_title} Learning`
+- Concepts container/database: `{scope_title} Concepts`
+- Learning-task database and task board: `{scope_title} Learning Tasks`
+
+Here, `scope_title` is the selected workspace, module, source, or topic title. Use the narrowest stable scope that matches the request.
+
 ## Learning-task database
 
 Recommended properties:

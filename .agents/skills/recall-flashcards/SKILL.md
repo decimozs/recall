@@ -70,7 +70,7 @@ X-Agent-Key: <AGENT_API_KEY>
 
 Do not create a Notion attempt row for a review that is only started or still in progress. The app stores those locally until completion; the completion response queues the sync request.
 
-Create or update exactly one row in the existing `Recall Quiz Attempts` data source for each completed flashcard review. Set:
+Create or update exactly one row in the existing `Recall` data source for each completed flashcard review. The shared attempts database must be named exactly `Recall`; never create a separate `Recall Quiz Attempts` database. Set:
 
 - `Mode` = `Flashcards`
 - `Status` = `Completed`
@@ -83,6 +83,8 @@ Create or update exactly one row in the existing `Recall Quiz Attempts` data sou
 - `Attempt Date`, `Workspace`, and `Source` from the sync payload
 
 Use Recall attempt ID as the internal idempotency key. Preserve every completed retry as its own Notion row and assign the existing meaningful emoji policy (for example, 🧠) to newly created rows. Do not write flashcard metrics into the learning-task database.
+
+When creating related learning artifacts, use `{scope_title} Learning`, `{scope_title} Learning Tasks`, and `{scope_title} Concepts`, where `scope_title` is the selected workspace, module, source, or topic title.
 
 ## Validate before reporting success
 

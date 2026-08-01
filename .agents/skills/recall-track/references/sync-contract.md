@@ -17,7 +17,7 @@ The response contains:
 
 ## Current data sources
 
-- Recall Quiz Attempts: `collection://97de6d14-0113-4aec-b645-00a3941e05bb`
+- Recall: `collection://97de6d14-0113-4aec-b645-00a3941e05bb`
 - MongoDB Learning Tasks: `collection://05c7e4bd-6f95-4b84-a26d-61973028b007`
 
 These IDs belong to the current workspace configuration. Fetch them before use and do not assume they exist in another workspace.
@@ -38,4 +38,4 @@ These IDs belong to the current workspace configuration. Fetch them before use a
 | duration_display | Duration |
 | completed task result | Task Status = Done, Done = checked |
 
-Scores and attempt metadata belong only in Recall Quiz Attempts. Roadmap task rows receive progress state only.
+Scores and attempt metadata belong only in Recall. Roadmap task rows receive progress state only.

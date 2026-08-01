@@ -58,7 +58,7 @@ Synchronize Recall's PostgreSQL state with the user's Notion learning system wit
 
 ### 4. Create or update the quiz-attempt row
 
-Use the existing `Recall Quiz Attempts` data source when present. A completed row should include:
+Use the existing `Recall` data source when present. The shared attempts database must be named exactly `Recall`; never create or refer to it as `Recall Quiz Attempts`. A completed row should include:
 
 - Quiz Name
 - Workspace

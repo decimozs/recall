@@ -16,6 +16,15 @@ Turn learning material into a navigable, trackable Notion system that Recall can
 - Ask only for decisions that materially change the structure: target audience/level, desired depth, and whether existing roadmap content may be updated.
 - Preserve the user's language and naming conventions unless they request Recall naming.
 
+### Naming convention
+
+- Define `scope_title` as the primary workspace, module, source, or topic title being organized. Use the narrowest stable title that matches the requested scope.
+- Name the roadmap parent page `{scope_title} Learning`.
+- Name the concept container or concepts database `{scope_title} Concepts`.
+- Name the learning-task database and task board `{scope_title} Learning Tasks`.
+- Name the shared quiz and flashcard attempts database exactly `Recall`. Never create or refer to it as `Recall Quiz Attempts`.
+- Reuse an existing artifact when its stable source metadata matches, even if its old title uses the previous naming convention; ask before renaming an existing user-owned artifact.
+
 ### 2. Read and analyze the source
 
 - Use the Notion MCP fetch/search tools to read the source and its relevant child content.
@@ -30,18 +39,19 @@ Create a parent roadmap page, concept note pages, and a task data source. Use st
 Default structure:
 
 ```text
-[Topic] Learning Roadmap
-├── [Topic] Fundamentals
-├── [Topic] [Concept]
-├── [Topic] [Concept]
-└── [Topic] Learning Tasks
+{scope_title} Learning
+├── {scope_title} Concepts
+│   ├── {Concept}
+│   ├── {Concept}
+│   └── {Concept}
+└── {scope_title} Learning Tasks
 ```
 
 - Create one concept note page per concept. Include a concise overview, learning outcomes, source-backed notes, and links to its tasks.
 - Create one task row per reviewable idea, not one row per paragraph. Include a source excerpt or reference in the Notes property.
 - Link tasks to their concept page when the Notion schema supports relations; otherwise use stable concept names and links in the Notes field.
 - Never replace existing concept-page content or task notes without explicit permission. Add missing sections or rows instead.
-- Keep quiz attempt data in a separate Recall Quiz Attempts database; do not add score/retry columns to the learning-task database.
+- Keep quiz and flashcard attempt data in the separate `Recall` database; do not add score/retry columns to the learning-task database.
 
 ### 4. Add useful views
 
@@ -53,7 +63,7 @@ Create or update views on the task database:
 - `Next up` — filtered to Not started/In progress and sorted by order.
 - `Calendar` — only when tasks have dates or a schedule was requested.
 
-For the separate quiz-attempt database, use attempts table, recent attempts, score history, and a board grouped by Status when it exists.
+For the separate `Recall` database, use attempts table, recent attempts, score history, and a board grouped by Status when it exists.
 
 ### 5. Assign icons
 
@@ -96,7 +106,7 @@ When the roadmap is used by Recall:
 
 - Generate quizzes from concept pages or the selected source through the protected Recall internal quiz endpoint.
 - Include a stable `task_key` on every generated question so scores can be aggregated by learning task/concept.
-- On quiz completion, write one row to the separate quiz-attempt database and update only general task progress fields such as Status and Done.
+- On quiz or flashcard completion, write one row to the separate `Recall` database and update only general task progress fields such as Status and Done.
 - Never write quiz scores, retries, or duration into the learning-task rows.
 
 ## Safety boundaries

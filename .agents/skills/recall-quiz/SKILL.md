@@ -92,7 +92,9 @@ The browser must not call Notion directly. Codex is the orchestration boundary b
 
 ### 6. Record quiz activity in Notion
 
-Use the existing `Recall Quiz Attempts` database when available. If it does not exist, create it with the schema in [quiz-schema.md](references/quiz-schema.md). Do not put score, retry, or duration columns into the learning-task database.
+Use the existing `Recall` database when available. If it does not exist, create it with the schema in [quiz-schema.md](references/quiz-schema.md) and name it exactly `Recall`. Do not put score, retry, or duration columns into the learning-task database.
+
+When creating the surrounding learning artifacts, use the scope-title convention: `{scope_title} Learning`, `{scope_title} Learning Tasks`, and `{scope_title} Concepts`, where `scope_title` is the selected workspace, module, source, or topic title.
 
 The attempt record is created after submission, not when the quiz is generated. Generation metadata may be recorded separately only if the user requests a quiz catalog.
 

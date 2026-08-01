@@ -23,7 +23,9 @@ Rules:
 - Do not use an array for `correct_answer`; Recall quizzes have one correct answer.
 - `task_key` should be stable across quiz generations so task-level results can be aggregated.
 
-## Recall Quiz Attempts database
+## Recall database
+
+Name the shared quiz-attempt database exactly `Recall`. It stores both Quiz and Flashcards rows; use the `Mode` property to distinguish them when that property exists.
 
 Recommended properties:
 
@@ -40,4 +42,4 @@ Recommended properties:
 | Total Questions | number | Total question count |
 | Duration | rich text | Readable duration such as `6m 11s` |
 
-Do not add Mode or Recall Attempt ID unless the user explicitly requests them.
+Use a `Mode` select with `Quiz` and `Flashcards` when the shared `Recall` database tracks both content types. Keep Recall Attempt ID internal for idempotency; do not add it as a Notion property unless explicitly requested.
