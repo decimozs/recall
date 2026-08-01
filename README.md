@@ -4,7 +4,7 @@ Recall is a local agent harness for turning your Notion notes into interactive q
 
 Codex connects the Recall app with your Notion workspace through the Notion MCP server. It reads selected notes or learning modules, creates source-grounded quiz questions, sends them to the local Recall app, and keeps your roadmap progress and quiz history synchronized with Notion.
 
-The browser only communicates with Recall. It never connects to Notion directly.
+The browser only communicates with Recall. It never connects to Notion directly. Quiz generation is initiated through the Codex skills and protected internal endpoints rather than a browser-side generation control.
 
 ## What Recall does
 
