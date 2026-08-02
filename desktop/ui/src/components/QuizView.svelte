@@ -1,7 +1,7 @@
 <script>
   import { createEventDispatcher } from 'svelte';
   import { tick } from 'svelte';
-  import { AlertTriangle, ChevronLeft, ChevronRight, CircleCheck } from 'lucide-svelte';
+  import { AlertTriangle, ChevronLeft, ChevronRight } from 'lucide-svelte';
   import { api, shuffle } from '../lib/api.js';
 
   export let quiz;
@@ -25,6 +25,8 @@
   $: pageQuestions = questions.slice(page * pageSize, (page + 1) * pageSize);
   $: answered = Object.keys(selectedAnswers).length;
   $: unanswered = Math.max(questions.length - answered, 0);
+  $: submitReady = started && questions.length > 0 && answered === questions.length;
+  $: dispatch('submitReady', submitReady);
 
   $: if (quiz && quiz.id !== loadedQuizId) {
     loadedQuizId = quiz.id;
@@ -46,6 +48,10 @@
     selectedAnswers = { ...selectedAnswers, [questionId]: answer };
   }
 
+  export function openSubmitDialog() {
+    if (submitReady && !submitting) showSubmitDialog = true;
+  }
+
   async function goToQuestion(questionIndex) {
     const question = questions[questionIndex];
     if (!question) return;
@@ -59,7 +65,18 @@
     page = Math.max(0, Math.min(nextPage, totalPages - 1));
     focusedQuestionIndex = page * pageSize;
     await tick();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const scrollToTop = () => {
+      const scrollContainer = document.querySelector('.main');
+      if (scrollContainer) {
+        scrollContainer.scrollTop = 0;
+        scrollContainer.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+      }
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
+    };
+    scrollToTop();
+    requestAnimationFrame(scrollToTop);
   }
 
   async function begin() {
@@ -116,7 +133,6 @@
       </div>
     {/if}
   </div>
-  <div class="eyebrow">{quiz.workspace_name} / {quiz.source_title}</div>
   <h1 class="quiz-title">{quiz.title}</h1>
   <div class="quiz-meta">{questions.length} questions · Page {page + 1} of {totalPages}</div>
 
@@ -151,11 +167,6 @@
       {#if page > 0}<button class="btn" type="button" on:click={() => changePage(page - 1)}><ChevronLeft size={14} strokeWidth={1.8} /> Previous</button>{:else}<span></span>{/if}
       {#if page + 1 < totalPages}
         <button class="btn primary" type="button" on:click={() => changePage(page + 1)}>Next page <ChevronRight size={14} strokeWidth={1.8} /></button>
-      {:else}
-        <div class="submit-action">
-          {#if questions.length > 0 && answered === questions.length}<span class="submit-ready-message" aria-live="polite">All questions answered. Ready to submit.</span>{/if}
-          <button class="btn primary" type="button" disabled={submitting} on:click={() => (showSubmitDialog = true)}><CircleCheck size={14} strokeWidth={1.8} /> {answered === questions.length ? 'Submit quiz' : 'Review & submit'}</button>
-        </div>
       {/if}
     </div>
   {/if}

@@ -8,7 +8,7 @@
   import SummaryView from './components/SummaryView.svelte';
   import LibraryListView from './components/LibraryListView.svelte';
   import SettingsView from './components/SettingsView.svelte';
-  import { AlertTriangle, ArrowLeft, Minus, PanelLeft, PanelRight, Square, X } from 'lucide-svelte';
+  import { AlertTriangle, ArrowLeft, CircleCheck, Minus, PanelLeft, PanelRight, Square, X } from 'lucide-svelte';
   import { getCurrentWindow } from '@tauri-apps/api/window';
   import { api, apiBase } from './lib/api.js';
 
@@ -42,6 +42,10 @@
   let mainElement;
   let windowMaximized = false;
   let sidebarCollapsed = false;
+  let quizView;
+  let flashcardView;
+  let quizSubmitReady = false;
+  let flashcardSubmitReady = false;
   let showStudyExitDialog = false;
   let themePreference = 'light';
   let systemThemeIsDark = false;
@@ -158,7 +162,7 @@
   }
 
   async function loadRecentAttempts() {
-    const response = await api('/api/recent-attempts?limit=8');
+    const response = await api('/api/recent-attempts?limit=50');
     recentAttempts = response.data || [];
   }
 
@@ -284,6 +288,8 @@
         : recentAttempts;
 
   async function selectQuiz(id) {
+    quizSubmitReady = false;
+    flashcardSubmitReady = false;
     selectedQuizId = Number(id);
     selectedFlashcardSetId = null;
     selectedRecentId = null;
@@ -296,6 +302,8 @@
   }
 
   async function selectFlashcardSet(id) {
+    quizSubmitReady = false;
+    flashcardSubmitReady = false;
     selectedFlashcardSetId = Number(id);
     selectedQuizId = null;
     selectedRecentId = null;
@@ -309,6 +317,8 @@
 
   function exitStudy() {
     showStudyExitDialog = false;
+    quizSubmitReady = false;
+    flashcardSubmitReady = false;
     view = 'dashboard';
     quiz = null;
     flashcardSet = null;
@@ -378,6 +388,8 @@
   }
 
   async function goHome() {
+    quizSubmitReady = false;
+    flashcardSubmitReady = false;
     view = 'dashboard';
     workspaceOnly = false;
     selectedQuizId = null;
@@ -421,18 +433,28 @@
         </button>
       </div>
       <div class="window-study-controls">
-        {#if view !== 'dashboard' || workspaceOnly}
-          <button class="study-window-back" type="button" aria-label="Back to dashboard" title="Back to dashboard" on:click={handleWindowBack}>
-            <ArrowLeft size={15} strokeWidth={1.8} />
-          </button>
-        {/if}
-        <button class="sidebar-window-toggle" type="button" aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} on:click={toggleSidebar}>
+        <button class="study-window-back" type="button" disabled={view === 'dashboard' && !workspaceOnly} aria-label="Back to dashboard" title={view === 'dashboard' && !workspaceOnly ? 'Already on dashboard' : 'Back to dashboard'} on:click={handleWindowBack}>
+          <ArrowLeft size={15} strokeWidth={1.8} />
+        </button>
+        <button class="sidebar-window-toggle" type="button" disabled={view === 'quiz' || view === 'flashcards'} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={view === 'quiz' || view === 'flashcards' ? 'Sidebar disabled in Zen mode' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} on:click={toggleSidebar}>
           {#if sidebarCollapsed}<PanelRight size={15} strokeWidth={1.8} />{:else}<PanelLeft size={15} strokeWidth={1.8} />{/if}
         </button>
       </div>
     </div>
     <div class="window-drag-region" role="presentation" data-tauri-drag-region on:mousedown={startWindowDrag}></div>
-    <div class="window-chrome-spacer" aria-hidden="true"></div>
+    <div class="window-chrome-spacer">
+      {#if view === 'quiz' && quizSubmitReady}
+        <button class="window-submit-button" type="button" aria-label="Submit quiz" title="Submit quiz" on:click={() => quizView?.openSubmitDialog()}>
+          <CircleCheck size={15} strokeWidth={1.9} />
+          <span>Submit quiz</span>
+        </button>
+      {:else if view === 'flashcards' && flashcardSubmitReady}
+        <button class="window-submit-button" type="button" aria-label="Submit flashcard review" title="Submit flashcard review" on:click={() => flashcardView?.openSubmitDialog()}>
+          <CircleCheck size={15} strokeWidth={1.9} />
+          <span>Submit review</span>
+        </button>
+      {/if}
+    </div>
   </header>
 
   <Sidebar {workspaces} {quizzes} {flashcardSets} {recentAttempts} {sidebarCollapsed} currentView={view} {libraryKind} {selectedRecentId} on:workspaceSelect={selectWorkspace} on:quizSelect={requestQuiz} on:flashcardSelect={requestFlashcardSet} on:recentSelect={selectRecent} on:seeMore={openLibraryList} on:settings={openSettings} on:home={goHome} />
@@ -444,11 +466,11 @@
       {:else if error}
         <div class="eyebrow">Getting started</div><h1 class="hero-title">Recall is waiting for data.</h1><p class="hero-subtitle">{error}</p>
       {:else if view === 'quiz' && quiz}
-        <QuizView {quiz} autoStart={true} on:back={requestStudyExit} on:complete={completeActivity} />
+        <QuizView bind:this={quizView} {quiz} autoStart={true} on:back={requestStudyExit} on:complete={completeActivity} on:submitReady={(event) => (quizSubmitReady = event.detail)} />
       {:else if view === 'flashcards' && flashcardSet}
-        <FlashcardView set={flashcardSet} autoStart={true} on:back={requestStudyExit} on:complete={completeActivity} />
+        <FlashcardView bind:this={flashcardView} set={flashcardSet} autoStart={true} on:back={requestStudyExit} on:complete={completeActivity} on:submitReady={(event) => (flashcardSubmitReady = event.detail)} />
       {:else if view === 'library-list'}
-        <LibraryListView kind={libraryKind} items={libraryItems} on:back={goHome} on:workspaceSelect={selectWorkspace} on:quizSelect={requestQuiz} on:flashcardSelect={requestFlashcardSet} on:recentSelect={selectRecent} />
+        <LibraryListView kind={libraryKind} items={libraryItems} on:back={goHome} on:workspaceSelect={selectWorkspace} on:workspaceChanged={() => refreshLibrary()} on:workspaceDeleted={() => refreshLibrary()} on:quizSelect={requestQuiz} on:flashcardSelect={requestFlashcardSet} on:recentSelect={selectRecent} />
       {:else if view === 'attempt' && attemptId}
         <AttemptView attemptId={attemptId} on:back={exitStudy} />
       {:else if view === 'summary' && summary}

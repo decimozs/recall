@@ -31,11 +31,10 @@
 
 <section class="attempt-view">
   {#if error}
-    <div class="eyebrow">Attempt review</div><h1 class="hero-title">Could not load this attempt.</h1><p class="hero-subtitle">{error}</p>
+    <h1 class="hero-title">Could not load this attempt.</h1><p class="hero-subtitle">{error}</p>
   {:else if !attempt}
     <div class="loading">Loading attempt…</div>
   {:else}
-    <div class="eyebrow">{attempt.content_mode === 'flashcards' ? 'Flashcard review' : 'Quiz review'}</div>
     <h1 class="hero-title">{attempt.quiz_title || attempt.flashcard_title}</h1>
     <p class="hero-subtitle">{attempt.source_title} · {formatDate(attempt.completed_at)}</p>
     <div class="summary-grid attempt-summary-grid">

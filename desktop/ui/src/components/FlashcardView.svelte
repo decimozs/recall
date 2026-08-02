@@ -18,6 +18,8 @@
   let pendingKnown = null;
   let error = '';
   let loadedSetId = null;
+  $: submitReady = started && pendingKnown !== null;
+  $: dispatch('submitReady', submitReady);
 
   $: currentCard = cards[index];
   $: if (set && set.id !== loadedSetId) {
@@ -48,6 +50,10 @@
     } finally {
       starting = false;
     }
+  }
+
+  export function openSubmitDialog() {
+    if (submitReady && !busy) showSubmitDialog = true;
   }
 
   async function mark(isKnown) {
@@ -98,7 +104,6 @@
 </script>
 
 <section class="flashcard-view">
-  <div class="eyebrow">Flashcards / {set.source_title}</div>
   <h1 class="quiz-title">{set.title}</h1>
   <p class="hero-subtitle">{cards.length} cards for a focused memory review.</p>
 

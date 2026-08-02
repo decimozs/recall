@@ -12,7 +12,6 @@
 </script>
 
 <section class="submission-summary">
-  <div class="eyebrow">Review complete</div>
   <h1 class="hero-title">Your {mode === 'flashcards' ? 'flashcard' : 'quiz'} summary</h1>
   <p class="hero-subtitle">{title}</p>
   <div class="summary-score">{score}%</div>

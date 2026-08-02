@@ -68,6 +68,7 @@ fn initialize_schema(connection: &Connection) -> rusqlite::Result<()> {
           notion_workspace_id TEXT NOT NULL UNIQUE,
           name TEXT NOT NULL,
           icon TEXT DEFAULT '◈',
+          pinned INTEGER NOT NULL DEFAULT 0,
           created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
         );
         CREATE TABLE IF NOT EXISTS sources (
@@ -178,6 +179,17 @@ fn initialize_schema(connection: &Connection) -> rusqlite::Result<()> {
         "INSERT OR IGNORE INTO schema_migrations(version) VALUES (1)",
         [],
     )?;
+    let workspace_columns = {
+        let mut statement = connection.prepare("PRAGMA table_info(workspaces)")?;
+        let rows = statement.query_map([], |row| row.get::<_, String>(1))?;
+        rows.collect::<rusqlite::Result<Vec<_>>>()?
+    };
+    if !workspace_columns.iter().any(|column| column == "pinned") {
+        connection.execute(
+            "ALTER TABLE workspaces ADD COLUMN pinned INTEGER NOT NULL DEFAULT 0",
+            [],
+        )?;
+    }
     Ok(())
 }
 
