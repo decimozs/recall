@@ -12,6 +12,12 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS'
 };
 const json = (body: unknown, status = 200, headers: HeadersInit = {}) => Response.json(body, { status, headers: { ...corsHeaders, ...headers } });
+type EventClient = {
+  controller: ReadableStreamDefaultController<Uint8Array>;
+  heartbeat: ReturnType<typeof setInterval>;
+};
+const eventEncoder = new TextEncoder();
+const eventClients = new Set<EventClient>();
 const page = (request: Request) => {
   const url = new URL(request.url);
   return { limit: Math.min(Number(url.searchParams.get('limit') || 20), 100), offset: Math.max(Number(url.searchParams.get('offset') || 0), 0) };
@@ -19,6 +25,50 @@ const page = (request: Request) => {
 const body = (request: Request) => request.json().catch(() => ({}));
 const authAgent = (request: Request) => request.headers.get('x-agent-key') === agentKey;
 const now = () => new Date().toISOString();
+const sse = (event: string, data: unknown) => eventEncoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+const removeEventClient = (client: EventClient) => {
+  clearInterval(client.heartbeat);
+  eventClients.delete(client);
+};
+const broadcast = (event: string, data: Record<string, unknown> = {}) => {
+  const message = sse(event, { ...data, at: now() });
+  for (const client of eventClients) {
+    try {
+      client.controller.enqueue(message);
+    } catch {
+      removeEventClient(client);
+    }
+  }
+};
+function events() {
+  let client: EventClient | null = null;
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      const heartbeat = setInterval(() => {
+        if (!client) return;
+        try {
+          client.controller.enqueue(eventEncoder.encode(': keep-alive\n\n'));
+        } catch {
+          removeEventClient(client);
+        }
+      }, 25000);
+      client = { controller, heartbeat };
+      eventClients.add(client);
+      controller.enqueue(sse('ready', { at: now() }));
+    },
+    cancel() {
+      if (client) removeEventClient(client);
+    }
+  });
+  return new Response(stream, {
+    headers: {
+      ...corsHeaders,
+      'Cache-Control': 'no-cache, no-transform',
+      'Content-Type': 'text/event-stream; charset=utf-8',
+      Connection: 'keep-alive'
+    }
+  });
+}
 
 async function workspaces(request: Request) {
   const { limit, offset } = page(request);
@@ -77,6 +127,63 @@ async function answer(request: Request) {
   return json({ is_correct: correct, correct_answer: questions[0].correct_answer, explanation: questions[0].explanation, source_excerpt: questions[0].source_excerpt });
 }
 
+type AttemptTaskResult = {
+  task_key: string;
+  correct_count: number;
+  total_questions: number;
+  score: number;
+};
+
+async function rebuildAttemptTaskResults(attemptId: number) {
+  const attempts = await db.query<{ quiz_id: number | null; flashcard_set_id: number | null; content_mode: string | null; completed_at: string | null }>(
+    'SELECT quiz_id, flashcard_set_id, content_mode, completed_at FROM attempts WHERE id = ?',
+    [attemptId]
+  );
+  if (!attempts.length) throw new Error('Attempt not found');
+  if (!attempts[0].completed_at) throw new Error('Attempt is not complete');
+
+  const rows = attempts[0].content_mode === 'flashcards'
+    ? await db.query<{ task_key: string; correct_count: number; total_questions: number }>(`
+        SELECT NULLIF(TRIM(f.task_key), '') AS task_key,
+          COALESCE(SUM(CASE WHEN fra.is_known = 1 THEN 1 ELSE 0 END), 0) AS correct_count,
+          COUNT(*) AS total_questions
+        FROM flashcards f
+        LEFT JOIN flashcard_review_answers fra
+          ON fra.card_id = f.id AND fra.review_id = ?
+        WHERE f.set_id = ? AND NULLIF(TRIM(f.task_key), '') IS NOT NULL
+        GROUP BY NULLIF(TRIM(f.task_key), '')
+        ORDER BY task_key`, [attemptId, attempts[0].flashcard_set_id])
+    : await db.query<{ task_key: string; correct_count: number; total_questions: number }>(`
+        SELECT NULLIF(TRIM(q.task_key), '') AS task_key,
+          COALESCE(SUM(CASE WHEN aa.is_correct = 1 THEN 1 ELSE 0 END), 0) AS correct_count,
+          COUNT(*) AS total_questions
+        FROM questions q
+        LEFT JOIN attempt_answers aa
+          ON aa.question_id = q.id AND aa.attempt_id = ?
+        WHERE q.quiz_id = ? AND NULLIF(TRIM(q.task_key), '') IS NOT NULL
+        GROUP BY NULLIF(TRIM(q.task_key), '')
+        ORDER BY task_key`, [attemptId, attempts[0].quiz_id]);
+
+  await db.exec('DELETE FROM attempt_task_results WHERE attempt_id = ?', [attemptId]);
+  const results: AttemptTaskResult[] = rows.map((row) => {
+    const correctCount = Number(row.correct_count || 0);
+    const totalQuestions = Number(row.total_questions || 0);
+    return {
+      task_key: String(row.task_key),
+      correct_count: correctCount,
+      total_questions: totalQuestions,
+      score: totalQuestions ? Math.round((correctCount / totalQuestions) * 100) : 0
+    };
+  });
+  for (const result of results) {
+    await db.exec(
+      'INSERT INTO attempt_task_results (attempt_id, task_key, correct_count, total_questions, score) VALUES (?, ?, ?, ?, ?)',
+      [attemptId, result.task_key, result.correct_count, result.total_questions, result.score]
+    );
+  }
+  return results;
+}
+
 async function complete(request: Request) {
   const payload = await body(request) as { mode?: string };
   const completedAt = now();
@@ -85,9 +192,11 @@ async function complete(request: Request) {
   const answered = await db.query<{ correct_count: number }>('SELECT COALESCE(SUM(is_correct), 0) AS correct_count FROM attempt_answers WHERE attempt_id = ?', [request.params.id]);
   const score = rows[0].total_questions ? Math.round((Number(answered[0]?.correct_count || 0) / rows[0].total_questions) * 100) : 0;
   await db.exec('UPDATE attempts SET completed_at = ?, mode = ?, score = ? WHERE id = ?', [completedAt, payload.mode === 'zen' ? 'zen' : 'normal', score, request.params.id]);
+  const taskResults = await rebuildAttemptTaskResults(Number(request.params.id));
   await db.exec('INSERT OR IGNORE INTO notion_sync_requests (attempt_id) VALUES (?)', [request.params.id]);
   const attempt = await db.query('SELECT *, CAST((julianday(completed_at) - julianday(started_at)) * 86400 AS INTEGER) AS duration_seconds FROM attempts WHERE id = ?', [request.params.id]);
-  return json({ ...attempt[0], duration_display: formatDuration(attempt[0].duration_seconds), correct_count: Number(answered[0]?.correct_count || 0), task_results: [], notion_sync: { status: 'queued', endpoint: `/api/internal/attempts/${request.params.id}/notion-sync` } });
+  broadcast('content.updated', { kind: 'attempt', id: Number(request.params.id) });
+  return json({ ...attempt[0], duration_display: formatDuration(attempt[0].duration_seconds), correct_count: Number(answered[0]?.correct_count || 0), task_results: taskResults, notion_sync: { status: 'queued', endpoint: `/api/internal/attempts/${request.params.id}/notion-sync` } });
 }
 
 async function stats() {
@@ -104,6 +213,7 @@ async function createWorkspace(request: Request) {
   const externalId = payload.notion_workspace_id?.trim() || `recall-${Date.now()}`;
   const result = await db.exec('INSERT INTO workspaces (notion_workspace_id, name, icon) VALUES (?, ?, ?)', [externalId, payload.name.trim(), '◌']);
   const rows = await db.query('SELECT * FROM workspaces WHERE id = ?', [result.last_insert_rowid]);
+  broadcast('content.updated', { kind: 'workspace', id: Number(result.last_insert_rowid) });
   return json(rows[0], 201);
 }
 
@@ -216,17 +326,44 @@ async function notionSync(request: Request) {
     JOIN sources s ON s.id = COALESCE(q.source_id, fs.source_id) JOIN workspaces w ON w.id = s.workspace_id
     WHERE a.id = ?`, [request.params.id]);
   if (!rows.length) return json({ error: 'Attempt not found' }, 404);
-  const tasks = await db.query('SELECT task_key, correct_count, total_questions, score FROM attempt_task_results WHERE attempt_id = ? ORDER BY task_key', [request.params.id]);
+  let tasks: AttemptTaskResult[] = await db.query<AttemptTaskResult>('SELECT task_key, correct_count, total_questions, score FROM attempt_task_results WHERE attempt_id = ? ORDER BY task_key', [request.params.id]);
+  if (!tasks.length && attemptRow.completed_at) tasks = await rebuildAttemptTaskResults(Number(request.params.id));
   const attemptRow = rows[0];
   return json({
     attempt: { ...attemptRow, mode: attemptRow.content_mode === 'flashcards' ? 'Flashcards' : 'Quiz', duration_display: formatDuration(attemptRow.duration_seconds) },
     tasks,
     notion_target: {
-      attempts_data_source_url: 'collection://97de6d14-0113-4aec-b645-00a3941e05bb',
-      task_data_source_url: 'collection://05c7e4bd-6f95-4b84-a26d-61973028b007',
-      rules: ['Create one row in Recall for this completed attempt.', 'Update matching learning-task rows using task_key; only change Status and Done.', 'Do not write score, retry, duration, or quiz-status fields to learning-task rows.']
+      attempts_database_name: 'Recall',
+      task_database_name: `${attemptRow.workspace_name} Learning Tasks`,
+      scope_title: attemptRow.workspace_name,
+      notion_workspace_id: attemptRow.notion_workspace_id,
+      source_notion_page_id: attemptRow.notion_page_id,
+      required_views: {
+        attempts: ['All Attempts', 'Recent Attempts', 'Score History'],
+        tasks: ['All tasks', 'Kanban Board', 'By concept', 'Next up']
+      },
+      rules: ['Create one row in Recall for this completed attempt.', 'Update every matching learning-task row using task_key; only change Status and Done.', 'Verify every linked view uses the same underlying data source.', 'Do not write score, retry, duration, or quiz-status fields to learning-task rows.']
     }
   });
+}
+
+async function rebuildAttemptTaskResultsEndpoint(request: Request) {
+  if (!authAgent(request)) return json({ error: 'Agent authentication required' }, 401);
+  const attemptId = Number(request.params.id);
+  try {
+    const tasks = await rebuildAttemptTaskResults(attemptId);
+    return json({ attempt_id: attemptId, tasks, status: 'rebuilt' });
+  } catch (error) {
+    return json({ error: error instanceof Error ? error.message : 'Could not rebuild task results' }, 400);
+  }
+}
+
+async function rebuildAllAttemptTaskResults(request: Request) {
+  if (!authAgent(request)) return json({ error: 'Agent authentication required' }, 401);
+  const attempts = await db.query<{ id: number }>('SELECT id FROM attempts WHERE completed_at IS NOT NULL ORDER BY completed_at, id');
+  const rebuilt = [];
+  for (const item of attempts) rebuilt.push({ attempt_id: Number(item.id), tasks: await rebuildAttemptTaskResults(Number(item.id)) });
+  return json({ status: 'rebuilt', attempts: rebuilt, count: rebuilt.length });
 }
 
 async function publishQuiz(request: Request) {
@@ -241,6 +378,7 @@ async function publishQuiz(request: Request) {
   for (const [index, question] of payload.quiz.questions.entries()) {
     await db.exec(`INSERT INTO questions (quiz_id, position, type, prompt, choices, correct_answer, explanation, source_excerpt, task_key) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, [quizResult.last_insert_rowid, index + 1, question.type || 'multiple_choice', question.prompt, JSON.stringify(question.choices || []), question.correct_answer, question.explanation || '', question.source_excerpt || '', question.task_key || null]);
   }
+  broadcast('content.updated', { kind: 'quiz', id: Number(quizResult.last_insert_rowid), workspace_id: Number(workspace[0].id) });
   return json({ id: quizResult.last_insert_rowid }, 201);
 }
 
@@ -289,9 +427,11 @@ async function completeFlashcardReview(request: Request) {
   const known = await db.query<{ count: number }>('SELECT COUNT(*) AS count FROM flashcard_review_answers WHERE review_id = ? AND is_known = 1', [request.params.id]);
   const score = review[0].total_questions ? Math.round((Number(known[0].count) / review[0].total_questions) * 100) : 0;
   await db.exec('UPDATE attempts SET completed_at = ?, score = ? WHERE id = ?', [now(), score, request.params.id]);
+  const taskResults = await rebuildAttemptTaskResults(Number(request.params.id));
   await db.exec('INSERT OR IGNORE INTO notion_sync_requests (attempt_id) VALUES (?)', [request.params.id]);
   const attempt = await db.query('SELECT *, CAST((julianday(completed_at) - julianday(started_at)) * 86400 AS INTEGER) AS duration_seconds FROM attempts WHERE id = ?', [request.params.id]);
-  return json({ ...attempt[0], duration_display: formatDuration(attempt[0].duration_seconds), known_cards: Number(known[0].count), notion_sync: { status: 'queued', endpoint: `/api/internal/attempts/${request.params.id}/notion-sync` } });
+  broadcast('content.updated', { kind: 'attempt', id: Number(request.params.id) });
+  return json({ ...attempt[0], duration_display: formatDuration(attempt[0].duration_seconds), known_cards: Number(known[0].count), task_results: taskResults, notion_sync: { status: 'queued', endpoint: `/api/internal/attempts/${request.params.id}/notion-sync` } });
 }
 
 async function flashcardReview(request: Request) {
@@ -316,14 +456,17 @@ async function publishFlashcards(request: Request) {
     await db.exec('UPDATE flashcard_sets SET card_count = ? WHERE id = ?', [payload.set.cards.length, setId]);
   }
   for (const [index, card] of payload.set.cards.entries()) await db.exec('INSERT INTO flashcards (set_id, position, front, back, hint, source_excerpt, task_key) VALUES (?, ?, ?, ?, ?, ?, ?)', [setId, index + 1, card.front, card.back, card.hint || '', card.source_excerpt || '', card.task_key || null]);
+  broadcast('content.updated', { kind: 'flashcards', id: Number(setId), workspace_id: Number(workspace[0].id) });
   return json({ id: setId, card_count: payload.set.cards.length }, 201);
 }
 
 const server = Bun.serve({
   hostname: '127.0.0.1',
   port,
+  idleTimeout: 0,
   routes: {
     '/api/health': () => json({ ok: true, database: 'sqlite' }),
+    '/api/events': { GET: events },
     '/api/workspaces': { GET: workspaces, POST: createWorkspace },
     '/api/workspaces/:id/quizzes': { GET: workspaceQuizzes },
     '/api/quizzes/:id': { GET: quiz },
@@ -339,6 +482,8 @@ const server = Bun.serve({
     '/api/internal/generation-requests': { GET: queuedGeneration },
     '/api/internal/quizzes': { POST: publishQuiz },
     '/api/internal/attempts/:id/notion-sync': { GET: notionSync },
+    '/api/internal/attempts/:id/rebuild-task-results': { POST: rebuildAttemptTaskResultsEndpoint },
+    '/api/internal/task-results/rebuild': { POST: rebuildAllAttemptTaskResults },
     '/api/workspaces/:id/flashcard-sets': { GET: workspaceFlashcards },
     '/api/flashcard-sets/:id': { GET: flashcardSet },
     '/api/flashcard-sets/:id/reviews': { POST: startFlashcardReview },

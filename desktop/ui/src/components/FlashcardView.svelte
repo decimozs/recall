@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { AlertTriangle, Check, ChevronLeft, ChevronRight, RotateCcw } from 'lucide-svelte';
+  import { AlertTriangle, Check, ChevronRight, RotateCcw } from 'lucide-svelte';
   import { api } from '../lib/api.js';
 
   export let set;
@@ -98,7 +98,6 @@
 </script>
 
 <section class="flashcard-view">
-  <button class="zen-back-icon" type="button" on:click={() => dispatch('back')} aria-label="Back to dashboard" title="Back to dashboard"><ChevronLeft size={18} strokeWidth={1.8} /></button>
   <div class="eyebrow">Flashcards / {set.source_title}</div>
   <h1 class="quiz-title">{set.title}</h1>
   <p class="hero-subtitle">{cards.length} cards for a focused memory review.</p>
@@ -117,8 +116,8 @@
     </div>
     <button class:is-flipped={flipped} class="flashcard-card" type="button" on:click={() => (flipped = !flipped)} aria-label={flipped ? 'Show front of card' : 'Show answer'}>
       <span class="flashcard-inner">
-        <span class="flashcard-face flashcard-front"><small>RECALL</small><strong>{currentCard.front}</strong><em>Click to reveal</em></span>
-        <span class="flashcard-face flashcard-back"><small>ANSWER</small><strong>{currentCard.back}</strong>{#if currentCard.hint}<em>{currentCard.hint}</em>{/if}</span>
+        <span class="flashcard-face flashcard-front"><small>Recall</small><strong>{currentCard.front}</strong><em>Click to reveal</em></span>
+        <span class="flashcard-face flashcard-back"><small>Answer</small><strong>{currentCard.back}</strong>{#if currentCard.hint}<em>{currentCard.hint}</em>{/if}</span>
       </span>
     </button>
     <p class="flashcard-help">Flip the card before choosing how well you remembered it.</p>
@@ -126,7 +125,6 @@
       <button class="btn" type="button" disabled={!flipped || busy} on:click={() => mark(false)}>Needs review</button>
       <button class="btn primary" type="button" disabled={!flipped || busy} on:click={() => mark(true)}><Check size={14} strokeWidth={1.8} /> {index + 1 === cards.length ? 'Finish review' : 'I knew this'} <ChevronRight size={14} strokeWidth={1.8} /></button>
     </div>
-    <button class="back flashcard-back-button" type="button" on:click={() => dispatch('back')}><ChevronLeft size={14} strokeWidth={1.8} /> Back to dashboard</button>
   {:else}
     <div class="empty">This flashcard set has no cards yet.</div>
   {/if}
