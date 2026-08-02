@@ -1,3 +1,5 @@
+<img width="2850" height="1011" alt="github-banner" src="https://github.com/user-attachments/assets/97f62ffb-0259-4ac6-8589-7e1f493b1eac" />
+
 # Recall
 
 Recall is a self-contained macOS learning desktop app with an agent-skill workflow for turning selected Notion notes into quizzes and flashcards, studying them offline, and tracking progress over time. An agent harness such as Claude Code, Codex, OpenCode, or another compatible runner reads selected Notion sources through Notion MCP, publishes study material to the local Recall app, and synchronizes completed attempts and roadmap progress back to Notion.
