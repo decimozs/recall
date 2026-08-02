@@ -8,6 +8,8 @@ Recall is desktop-only for now. There is no browser runtime, Docker runtime, or 
 
 > **Platform warning:** Recall currently supports macOS only. Linux and Windows support are planned for a future update and are not available yet.
 
+<img width="1512" height="982" alt="image" src="https://github.com/user-attachments/assets/6ebb4b82-6a5d-4615-af3a-7717a457a15e" />
+
 ## Features
 
 - Source-grounded quizzes with single-answer multiple choice and true/false questions.
