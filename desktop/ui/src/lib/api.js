@@ -1,9 +1,11 @@
-const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+export const apiBase = import.meta.env.VITE_API_BASE_URL || '';
+
+export const apiUrl = (path) => `${apiBase}${path}`;
 
 export async function api(path, options = {}) {
   const headers = { ...(options.headers || {}) };
   if (options.body && !headers['Content-Type']) headers['Content-Type'] = 'application/json';
-  const response = await fetch(`${apiBase}${path}`, { ...options, headers });
+  const response = await fetch(apiUrl(path), { ...options, headers });
   let payload = null;
   try {
     payload = await response.json();

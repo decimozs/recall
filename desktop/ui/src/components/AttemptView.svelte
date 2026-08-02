@@ -1,6 +1,6 @@
 <script>
   import { createEventDispatcher } from 'svelte';
-  import { ChevronLeft, CircleCheck, CircleX } from 'lucide-svelte';
+  import { CircleCheck, CircleX } from 'lucide-svelte';
   import { api } from '../lib/api.js';
 
   export let attemptId;
@@ -30,7 +30,6 @@
 </script>
 
 <section class="attempt-view">
-  <button class="back" type="button" on:click={() => dispatch('back')}><ChevronLeft size={14} strokeWidth={1.8} /> Back to dashboard</button>
   {#if error}
     <div class="eyebrow">Attempt review</div><h1 class="hero-title">Could not load this attempt.</h1><p class="hero-subtitle">{error}</p>
   {:else if !attempt}
@@ -40,9 +39,9 @@
     <h1 class="hero-title">{attempt.quiz_title || attempt.flashcard_title}</h1>
     <p class="hero-subtitle">{attempt.source_title} · {formatDate(attempt.completed_at)}</p>
     <div class="summary-grid attempt-summary-grid">
-      <div class="summary-card"><small>CURRENT SCORE</small><strong>{attempt.score ?? 0}%</strong></div>
-      <div class="summary-card"><small>TIME DURATION</small><strong>{attempt.duration_display}</strong></div>
-      <div class="summary-card"><small>QUESTIONS</small><strong>{attempt.total_questions}</strong></div>
+      <div class="summary-card"><small>Current score</small><strong>{attempt.score ?? 0}%</strong></div>
+      <div class="summary-card"><small>Time duration</small><strong>{attempt.duration_display}</strong></div>
+      <div class="summary-card"><small>Questions</small><strong>{attempt.total_questions}</strong></div>
     </div>
     <div class="panel">
       <div class="panel-head"><h2>What you remembered</h2><span>{attempt.content_mode === 'flashcards' ? attempt.flashcard_answers?.length || 0 : attempt.answers?.length || 0} responses</span></div>

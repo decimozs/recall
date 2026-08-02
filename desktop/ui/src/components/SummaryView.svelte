@@ -1,11 +1,9 @@
 <script>
-  import { ArrowLeft, Check, RotateCcw } from 'lucide-svelte';
-  import { createEventDispatcher } from 'svelte';
+  import { Check, RotateCcw } from 'lucide-svelte';
 
   export let result;
   export let title = 'Recall review';
   export let mode = 'quiz';
-  const dispatch = createEventDispatcher();
 
   $: score = Number(result?.score || 0);
   $: total = Number(result?.total_questions || 0);
@@ -20,16 +18,15 @@
   <div class="summary-score">{score}%</div>
   <p class="summary-note">{message}</p>
   <div class="summary-grid">
-    <div class="summary-card"><small>SCORE</small><strong>{score}%</strong></div>
+    <div class="summary-card"><small>Score</small><strong>{score}%</strong></div>
     <div class="summary-card"><small>{mode === 'flashcards' ? 'KNOWN CARDS' : 'CORRECT ANSWERS'}</small><strong>{correct} / {total}</strong></div>
-    <div class="summary-card"><small>DURATION</small><strong>{result?.duration_display || '—'}</strong></div>
+    <div class="summary-card"><small>Duration</small><strong>{result?.duration_display || '—'}</strong></div>
   </div>
   <div class="panel summary-guidance">
     <div class="panel-head"><h2>Next step</h2><Check size={16} strokeWidth={1.8} /></div>
     <p>{score < 80 ? 'Focus your next review on the questions or cards you missed, then take this material again while it is fresh.' : 'Keep this set in your rotation. Spaced repetition will help move this knowledge into long-term memory.'}</p>
   </div>
   <div class="summary-actions">
-    <button class="btn primary" type="button" on:click={() => dispatch('back')}><ArrowLeft size={14} strokeWidth={1.8} /> Back to dashboard</button>
     <span class="summary-mode"><RotateCcw size={13} strokeWidth={1.8} /> {mode === 'flashcards' ? 'Flashcard review saved' : 'Quiz attempt saved'}</span>
   </div>
 </section>

@@ -55,6 +55,13 @@
     document.getElementById(`question-${question.id}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
 
+  async function changePage(nextPage) {
+    page = Math.max(0, Math.min(nextPage, totalPages - 1));
+    focusedQuestionIndex = page * pageSize;
+    await tick();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   async function begin() {
     starting = true;
     error = '';
@@ -92,7 +99,6 @@
 </script>
 
 <section class="quiz-view">
-  <button class="quiz-zen-back-icon" type="button" on:click={() => dispatch('back')} aria-label="Back to dashboard" title="Back to dashboard"><ChevronLeft size={18} strokeWidth={1.8} /></button>
   <div class="zen-study-nav">
     {#if started}
       <div class="question-tracker" aria-label="Question tracker">
@@ -142,9 +148,9 @@
       {/each}
     </div>
     <div class="question-actions page-actions">
-      {#if page > 0}<button class="btn" type="button" on:click={() => (page -= 1)}><ChevronLeft size={14} strokeWidth={1.8} /> Previous</button>{:else}<span></span>{/if}
+      {#if page > 0}<button class="btn" type="button" on:click={() => changePage(page - 1)}><ChevronLeft size={14} strokeWidth={1.8} /> Previous</button>{:else}<span></span>{/if}
       {#if page + 1 < totalPages}
-        <button class="btn primary" type="button" on:click={() => (page += 1)}>Next page <ChevronRight size={14} strokeWidth={1.8} /></button>
+        <button class="btn primary" type="button" on:click={() => changePage(page + 1)}>Next page <ChevronRight size={14} strokeWidth={1.8} /></button>
       {:else}
         <div class="submit-action">
           {#if questions.length > 0 && answered === questions.length}<span class="submit-ready-message" aria-live="polite">All questions answered. Ready to submit.</span>{/if}
