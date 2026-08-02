@@ -13,7 +13,6 @@
 </script>
 
 <section class="settings-view" aria-labelledby="settings-title">
-  <div class="eyebrow">Recall</div>
   <h1 id="settings-title" class="hero-title">Settings</h1>
   <p class="hero-subtitle">Personalize how Recall looks and behaves.</p>
 

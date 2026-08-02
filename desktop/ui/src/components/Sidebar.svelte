@@ -122,10 +122,10 @@
       {#if recentAttempts.length}
         <div class="recent-list">
           {#each recentAttempts as recent}
-            <button class:active={currentView === 'attempt' && recent.attempt_id === selectedRecentId} class="recent-item" type="button" title="View this attempt" on:click={() => chooseRecent(recent.attempt_id)}>
+            <button class:active={currentView === 'attempt' && recent.attempt_id === selectedRecentId} class="recent-item" type="button" on:click={() => chooseRecent(recent.attempt_id)}>
               <span class="recent-item-copy">
                 <span class="recent-title-row"><strong>{recent.quiz_title}</strong><time>{formatDate(recent.completed_at)}</time></span>
-                <small class="recent-score">{recent.score ?? 0}%</small>
+                <small class="recent-score"><span class="recent-mode-badge">{recent.content_mode === 'flashcards' ? 'Flashcards' : 'Quiz'}</span><span>{recent.score ?? 0}%</span></small>
               </span>
             </button>
           {/each}

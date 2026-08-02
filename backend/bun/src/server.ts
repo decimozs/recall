@@ -9,7 +9,7 @@ await db.start();
 const corsHeaders = {
   'Access-Control-Allow-Origin': process.env.CORS_ORIGIN || '*',
   'Access-Control-Allow-Headers': 'Content-Type, X-Agent-Key',
-  'Access-Control-Allow-Methods': 'GET, POST, PATCH, OPTIONS'
+  'Access-Control-Allow-Methods': 'GET, POST, PATCH, DELETE, OPTIONS'
 };
 const json = (body: unknown, status = 200, headers: HeadersInit = {}) => Response.json(body, { status, headers: { ...corsHeaders, ...headers } });
 type EventClient = {
@@ -79,7 +79,7 @@ async function workspaces(request: Request) {
     LEFT JOIN sources s ON s.workspace_id = w.id
     LEFT JOIN quizzes q ON q.source_id = s.id
     LEFT JOIN attempts a ON a.quiz_id = q.id AND a.completed_at IS NOT NULL
-    GROUP BY w.id ORDER BY w.created_at LIMIT ? OFFSET ?`, [limit, offset]);
+    GROUP BY w.id ORDER BY w.pinned DESC, w.created_at LIMIT ? OFFSET ?`, [limit, offset]);
   return json({ data: rows, pagination: { limit, offset } });
 }
 
@@ -215,6 +215,49 @@ async function createWorkspace(request: Request) {
   const rows = await db.query('SELECT * FROM workspaces WHERE id = ?', [result.last_insert_rowid]);
   broadcast('content.updated', { kind: 'workspace', id: Number(result.last_insert_rowid) });
   return json(rows[0], 201);
+}
+
+async function updateWorkspace(request: Request) {
+  const payload = await body(request) as { name?: string; icon?: string; pinned?: boolean };
+  const existing = await db.query<{ id: number }>('SELECT id FROM workspaces WHERE id = ?', [request.params.id]);
+  if (!existing.length) return json({ error: 'Workspace not found' }, 404);
+
+  const updates: string[] = [];
+  const values: (string | number)[] = [];
+  if (payload.name !== undefined) {
+    const name = payload.name.trim();
+    if (!name) return json({ error: 'A workspace name is required' }, 400);
+    updates.push('name = ?');
+    values.push(name);
+  }
+  if (payload.icon !== undefined) {
+    const icon = payload.icon.trim();
+    if (!icon) return json({ error: 'Choose an emoji for the workspace' }, 400);
+    updates.push('icon = ?');
+    values.push(icon);
+  }
+  if (payload.pinned !== undefined) {
+    updates.push('pinned = ?');
+    values.push(payload.pinned ? 1 : 0);
+  }
+  if (!updates.length) return json({ error: 'No workspace changes provided' }, 400);
+
+  values.push(Number(request.params.id));
+  await db.exec(`UPDATE workspaces SET ${updates.join(', ')} WHERE id = ?`, values);
+  const rows = await db.query('SELECT * FROM workspaces WHERE id = ?', [request.params.id]);
+  broadcast('content.updated', { kind: 'workspace', id: Number(request.params.id) });
+  return json(rows[0]);
+}
+
+async function deleteWorkspace(request: Request) {
+  const existing = await db.query<{ id: number }>('SELECT id FROM workspaces WHERE id = ?', [request.params.id]);
+  if (!existing.length) return json({ error: 'Workspace not found' }, 404);
+  await db.exec(`DELETE FROM attempts
+    WHERE quiz_id IN (SELECT q.id FROM quizzes q JOIN sources s ON s.id = q.source_id WHERE s.workspace_id = ?)
+      OR flashcard_set_id IN (SELECT fs.id FROM flashcard_sets fs JOIN sources s ON s.id = fs.source_id WHERE s.workspace_id = ?)`, [request.params.id, request.params.id]);
+  await db.exec('DELETE FROM workspaces WHERE id = ?', [request.params.id]);
+  broadcast('content.updated', { kind: 'workspace', id: Number(request.params.id), deleted: true });
+  return json({ deleted: true, id: Number(request.params.id) });
 }
 
 async function generationRequest(request: Request) {
@@ -468,6 +511,7 @@ const server = Bun.serve({
     '/api/health': () => json({ ok: true, database: 'sqlite' }),
     '/api/events': { GET: events },
     '/api/workspaces': { GET: workspaces, POST: createWorkspace },
+    '/api/workspaces/:id': { PATCH: updateWorkspace, DELETE: deleteWorkspace },
     '/api/workspaces/:id/quizzes': { GET: workspaceQuizzes },
     '/api/quizzes/:id': { GET: quiz },
     '/api/quizzes/:id/attempts': { POST: startAttempt },
