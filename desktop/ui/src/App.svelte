@@ -418,45 +418,45 @@
   });
 </script>
 
-<div class:zen-mode={view === 'quiz' || view === 'flashcards'} class="app-shell">
-  <header class="window-chrome" aria-label="Recall window controls">
-    <div class="window-leading-controls">
-      <div class="window-controls">
-        <button class="window-control close" type="button" aria-label="Close Recall" title="Close" on:click={closeWindow}>
-          <X size={13} strokeWidth={2.4} />
-        </button>
-        <button class="window-control minimize" type="button" aria-label="Minimize Recall" title="Minimize" on:click={minimizeWindow}>
-          <Minus size={13} strokeWidth={2.4} />
-        </button>
-        <button class:active={windowMaximized} class="window-control maximize" type="button" aria-label="Toggle full size" title="Toggle full size" on:click={toggleMaximizeWindow}>
-          <Square size={11} strokeWidth={2.4} />
-        </button>
-      </div>
-      <div class="window-study-controls">
-        <button class="study-window-back" type="button" disabled={view === 'dashboard' && !workspaceOnly} aria-label="Back to dashboard" title={view === 'dashboard' && !workspaceOnly ? 'Already on dashboard' : 'Back to dashboard'} on:click={handleWindowBack}>
-          <ArrowLeft size={15} strokeWidth={1.8} />
-        </button>
-        <button class="sidebar-window-toggle" type="button" disabled={view === 'quiz' || view === 'flashcards'} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={view === 'quiz' || view === 'flashcards' ? 'Sidebar disabled in Zen mode' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} on:click={toggleSidebar}>
-          {#if sidebarCollapsed}<PanelRight size={15} strokeWidth={1.8} />{:else}<PanelLeft size={15} strokeWidth={1.8} />{/if}
-        </button>
-      </div>
+<header class="window-chrome" aria-label="Recall window controls">
+  <div class="window-leading-controls">
+    <div class="window-controls">
+      <button class="window-control close" type="button" aria-label="Close Recall" title="Close" on:click={closeWindow}>
+        <X size={13} strokeWidth={2.4} />
+      </button>
+      <button class="window-control minimize" type="button" aria-label="Minimize Recall" title="Minimize" on:click={minimizeWindow}>
+        <Minus size={13} strokeWidth={2.4} />
+      </button>
+      <button class:active={windowMaximized} class="window-control maximize" type="button" aria-label="Toggle full size" title="Toggle full size" on:click={toggleMaximizeWindow}>
+        <Square size={11} strokeWidth={2.4} />
+      </button>
     </div>
-    <div class="window-drag-region" role="presentation" data-tauri-drag-region on:mousedown={startWindowDrag}></div>
-    <div class="window-chrome-spacer">
-      {#if view === 'quiz' && quizSubmitReady}
-        <button class="window-submit-button" type="button" aria-label="Submit quiz" title="Submit quiz" on:click={() => quizView?.openSubmitDialog()}>
-          <CircleCheck size={15} strokeWidth={1.9} />
-          <span>Submit quiz</span>
-        </button>
-      {:else if view === 'flashcards' && flashcardSubmitReady}
-        <button class="window-submit-button" type="button" aria-label="Submit flashcard review" title="Submit flashcard review" on:click={() => flashcardView?.openSubmitDialog()}>
-          <CircleCheck size={15} strokeWidth={1.9} />
-          <span>Submit review</span>
-        </button>
-      {/if}
+    <div class="window-study-controls">
+      <button class="study-window-back" type="button" disabled={view === 'dashboard' && !workspaceOnly} aria-label="Back to dashboard" title={view === 'dashboard' && !workspaceOnly ? 'Already on dashboard' : 'Back to dashboard'} on:click={handleWindowBack}>
+        <ArrowLeft size={15} strokeWidth={1.8} />
+      </button>
+      <button class="sidebar-window-toggle" type="button" disabled={view === 'quiz' || view === 'flashcards'} aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={view === 'quiz' || view === 'flashcards' ? 'Sidebar disabled in Zen mode' : sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} on:click={toggleSidebar}>
+        {#if sidebarCollapsed}<PanelRight size={15} strokeWidth={1.8} />{:else}<PanelLeft size={15} strokeWidth={1.8} />{/if}
+      </button>
     </div>
-  </header>
+  </div>
+  <div class="window-drag-region" role="presentation" data-tauri-drag-region on:mousedown={startWindowDrag}></div>
+  <div class="window-chrome-spacer">
+    {#if view === 'quiz' && quizSubmitReady}
+      <button class="window-submit-button" type="button" aria-label="Submit quiz" title="Submit quiz" on:click={() => quizView?.openSubmitDialog()}>
+        <CircleCheck size={15} strokeWidth={1.9} />
+        <span>Submit quiz</span>
+      </button>
+    {:else if view === 'flashcards' && flashcardSubmitReady}
+      <button class="window-submit-button" type="button" aria-label="Submit flashcard review" title="Submit flashcard review" on:click={() => flashcardView?.openSubmitDialog()}>
+        <CircleCheck size={15} strokeWidth={1.9} />
+        <span>Submit review</span>
+      </button>
+    {/if}
+  </div>
+</header>
 
+<div class:zen-mode={view === 'quiz' || view === 'flashcards'} class="app-shell">
   <Sidebar {workspaces} {quizzes} {flashcardSets} {recentAttempts} {sidebarCollapsed} currentView={view} {libraryKind} {selectedRecentId} on:workspaceSelect={selectWorkspace} on:quizSelect={requestQuiz} on:flashcardSelect={requestFlashcardSet} on:recentSelect={selectRecent} on:seeMore={openLibraryList} on:settings={openSettings} on:home={goHome} />
   <main bind:this={mainElement} class="main">
     <header class="topbar"><div class="crumbs"><span>Recall</span><span>›</span><span>{view === 'quiz' ? quiz?.title || 'Quiz' : workspace?.name || 'Overview'}</span></div></header>

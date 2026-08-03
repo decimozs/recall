@@ -60,7 +60,6 @@
     if (!review || !currentCard || busy) return;
     if (index + 1 >= cards.length) {
       pendingKnown = isKnown;
-      showSubmitDialog = true;
       return;
     }
     await saveCard(isKnown);
